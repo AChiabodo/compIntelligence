@@ -1,93 +1,96 @@
 from collections import namedtuple
+from datetime import time
 import numpy as np
 from random import random
 from queue import PriorityQueue, SimpleQueue , LifoQueue
 from functools import reduce
-
-PROBLEM_SIZE = 10
-NUM_SETS = 16
+from enum import Enum
+PROBLEM_SIZE = 100
+NUM_SETS = 100
 
 State = namedtuple('State', ['taken', 'untaken'])
 
-def goal_check(state):
-    return np.all(reduce(np.logical_or,[SETS[i] for i in state.taken],  np.array([False for _ in range(PROBLEM_SIZE)]) ))
+class Algorithm(Enum):
+    A_STAR = 1
+    GREEDY = 2
+    DEPTH_FIRST = 3
+    BREADTH_FIRST = 4
 
-def distance(state):
-    return PROBLEM_SIZE - sum (
-        reduce(np.logical_or,[SETS[i] for i in state.taken], np.array([False for _ in range(PROBLEM_SIZE)]) ))
+class SetCoveringProblem:
+    
+    def __init__(self,algorithm : Algorithm) -> None:
+        match algorithm:
+            case Algorithm.A_STAR:
+                self.frontier = PriorityQueue()
+                self.cost_function = self.euristic
+            case Algorithm.GREEDY:
+                self.frontier = PriorityQueue()
+                self.cost_function = self.distance
+            case Algorithm.DEPTH_FIRST:
+                self.frontier = LifoQueue()
+                self.cost_function = lambda state : 0
+            case Algorithm.BREADTH_FIRST:
+                self.frontier = SimpleQueue()
+                self.cost_function = lambda state : 0
+        
+    def goal_check(self,state):
+        return np.all(reduce(np.logical_or,[self.sets[i] for i in state.taken],  np.array([False for _ in range(self.size)]) ))
 
-def euristic(state):
-    return distance(state) + len(state.taken)
+    def distance(self,state):
+        return self.size - sum (
+            reduce(np.logical_or,[self.sets[i] for i in state.taken], np.array([False for _ in range(self.size)]) ))
 
-SETS = tuple([np.array([random() < .2 for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
+    def euristic(self,state):
+        return self.distance(state) + len(state.taken) 
 
-while not goal_check(State(set(range(NUM_SETS)),set())) :
-    print("No solution found, generating new problem")
-    SETS = tuple([np.array([random() < .2 for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])    
+    def check_solvable(self,sets):
+        self.sets = sets
+        self.size = len(self.sets[0])
+        num_sets = len(sets)
+        if not self.goal_check(State(set(range(num_sets)),set())): 
+            return False
+        else:
+            return True
+        
 
-frontier = PriorityQueue()
-state = State(set(),set(range(NUM_SETS)))
-frontier.put((euristic(state),state))
-_ , current_state = frontier.get()
-counter = 0
-while not goal_check(current_state):
-    counter += 1
-    for action in current_state.untaken:
-        new_state = State(current_state.taken.union({action}),current_state.untaken.difference({action}))
-        frontier.put((euristic(new_state),new_state))
-    _ , current_state = frontier.get()
-assert goal_check(current_state), "Goal check failed"
-print("Solution found with A*")
-print(f"Found solution in {format(counter)} iterations,  steps : ({len(current_state.taken)})")
-print(f"Solution : {current_state.taken}")
+    def solve(self,sets):
+        self.sets = sets
+        self.size = len(self.sets[0])
+        num_sets = len(sets)
+        self.initial_state = State(set(),set(range(num_sets)))
+        self.counter = 0  
+        if not self.check_solvable(self.sets): raise Exception("Sets don't cover the problem")
+        
+        self.frontier.put((self.cost_function(self.initial_state),self.initial_state))
+        
+        _ , self.current_state = self.frontier.get()        
+        while not self.goal_check(self.current_state):
+            self.counter += 1
+            for action in self.current_state.untaken:
+                self.new_state = State(self.current_state.taken.union({action}),self.current_state.untaken.difference({action}))
+                self.frontier.put((self.cost_function(self.new_state),self.new_state))
+            _ , self.current_state = self.frontier.get()
+        if(self.goal_check(self.current_state)):
+            print("Solution found")
+            print(f"Found solution in {format(self.counter)} iterations,  steps : ({len(self.current_state.taken)})")
+            print(f"Solution : {self.current_state.taken}")
+        else:
+            print("No solution found")
 
+if __name__ == "__main__":
+    
+    SETS = tuple([np.array([random() < .1 for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
+    while (SetCoveringProblem(Algorithm.A_STAR).check_solvable(SETS) == False):
+        SETS = tuple([np.array([random() < .1 for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
 
-frontier = PriorityQueue()
-state = State(set(),set(range(NUM_SETS)))
-frontier.put((euristic(state),state))
-_ , current_state = frontier.get()
-counter = 0
-while not goal_check(current_state):
-    counter += 1
-    for action in current_state.untaken:
-        new_state = State(current_state.taken.union({action}),current_state.untaken.difference({action}))
-        frontier.put((euristic(new_state),new_state))
-    _ , current_state = frontier.get()
-assert goal_check(current_state), "Goal check failed"
-print("Solution found with greedy")
-print(f"Found solution in {format(counter)} iterations,  steps : ({len(current_state.taken)})")
-print(f"Solution : {current_state.taken}")
+    print("A*")
+    SetCoveringProblem(Algorithm.A_STAR).solve(SETS)
 
+    print("greedy")
+    SetCoveringProblem(Algorithm.GREEDY).solve(SETS)
 
-frontier = LifoQueue()
-state = State(set(),set(range(NUM_SETS)))
-frontier.put(state)
-current_state = frontier.get()
-counter = 0
-while not goal_check(current_state):
-    counter += 1
-    for action in current_state.untaken:
-        new_state = State(current_state.taken.union({action}),current_state.untaken.difference({action}))
-        frontier.put(new_state)
-    current_state = frontier.get()
-assert goal_check(current_state), "Goal check failed"
-print("Solution found with dept first")
-print(f"Found solution in {format(counter)} iterations,  steps : ({len(current_state.taken)})")
-print(f"Solution : {current_state.taken}")
+    print("depth first")
+    SetCoveringProblem(Algorithm.DEPTH_FIRST).solve(SETS)
 
-
-frontier = SimpleQueue()
-state = State(set(),set(range(NUM_SETS)))
-frontier.put(state)
-current_state = frontier.get()
-counter = 0
-while not goal_check(current_state):
-    counter += 1
-    for action in current_state.untaken:
-        new_state = State(current_state.taken.union({action}),current_state.untaken.difference({action}))
-        frontier.put(new_state)
-    current_state = frontier.get()
-assert goal_check(current_state), "Goal check failed"
-print("Solution found with breadth first")
-print(f"Found solution in {format(counter)} iterations,  steps : ({len(current_state.taken)})")
-print(f"Solution : {current_state.taken}")
+    print("breadth first")
+    #SetCoveringProblem(Algorithm.BREADTH_FIRST).solve(SETS)
