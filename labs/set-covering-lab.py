@@ -1,12 +1,13 @@
 from collections import namedtuple
 from datetime import time
+from math import ceil
 import numpy as np
 from random import random
 from queue import PriorityQueue, SimpleQueue , LifoQueue
 from functools import reduce
 from enum import Enum
-PROBLEM_SIZE = 100
-NUM_SETS = 100
+PROBLEM_SIZE = 5
+NUM_SETS = 15
 
 State = namedtuple('State', ['taken', 'untaken'])
 
@@ -27,21 +28,50 @@ class SetCoveringProblem:
                 self.frontier = PriorityQueue()
                 self.cost_function = self.distance
             case Algorithm.DEPTH_FIRST:
-                self.frontier = LifoQueue()
+                self.frontier = LifoQueue() #it would be more correct to use deque() but it does not allow you to use the put method
                 self.cost_function = lambda state : 0
             case Algorithm.BREADTH_FIRST:
                 self.frontier = SimpleQueue()
                 self.cost_function = lambda state : 0
         
     def goal_check(self,state):
-        return np.all(reduce(np.logical_or,[self.sets[i] for i in state.taken],  np.array([False for _ in range(self.size)]) ))
+        return np.all(self.covered(state))
+
+    def covered(self,state):
+        return reduce(np.logical_or,[self.sets[i] for i in state.taken],  np.array([False for _ in range(self.size)]) )
 
     def distance(self,state):
         return self.size - sum (
             reduce(np.logical_or,[self.sets[i] for i in state.taken], np.array([False for _ in range(self.size)]) ))
 
     def euristic(self,state):
-        return self.distance(state) + len(state.taken) 
+        return self.h3(state) 
+    
+    def h(self,state):
+        largest_set_size = max(sum(s) for s in self.sets)
+        missing_size = self.size - sum(self.covered(state))
+        optimistic_estimate = ceil(missing_size / largest_set_size)
+        return optimistic_estimate
+
+    def h2(self,state):
+        already_covered = self.covered(state)
+        if np.all(already_covered):
+            return 0
+        largest_set_size = max(sum(np.logical_and(s, np.logical_not(already_covered))) for s in self.sets)
+        missing_size = self.size - sum(already_covered)
+        optimistic_estimate = ceil(missing_size / largest_set_size)
+        return optimistic_estimate
+
+    def h3(self,state):
+        already_covered = self.covered(state)
+        if np.all(already_covered):
+            return 0
+        missing_size = self.size - sum(already_covered)
+        candidates = sorted((sum(np.logical_and(s, np.logical_not(already_covered))) for s in self.sets), reverse=True)
+        taken = 1
+        while sum(candidates[:taken]) < missing_size:
+            taken += 1
+        return taken
 
     def check_solvable(self,sets):
         self.sets = sets
@@ -93,4 +123,4 @@ if __name__ == "__main__":
     SetCoveringProblem(Algorithm.DEPTH_FIRST).solve(SETS)
 
     print("breadth first")
-    #SetCoveringProblem(Algorithm.BREADTH_FIRST).solve(SETS)
+    SetCoveringProblem(Algorithm.BREADTH_FIRST).solve(SETS)
