@@ -10,16 +10,29 @@ PROBLEM_SIZE = 20
 NUM_SETS = 25
 
 State = namedtuple('State', ['taken', 'untaken'])
-
-class Algorithm(Enum):
-    A_STAR = 1
-    GREEDY = 2
-    DEPTH_FIRST = 3
-    BREADTH_FIRST = 4
-    DIJKSTRA = 5
+PROBABILITY = 0.43
 
 class SetCoveringProblem:
+    """
+    A class representing a set covering problem.
+
+    Attributes:
+    - algorithm (Algorithm): the algorithm to use for solving the problem
+    - MODE (Mode): the mode to use for solving the problem (either ACTION or DEBUG)
+
+    Methods:
+    - check_solvable(self, sets): checks if the given sets represents a solvable problem
+    - solve(self, sets): solves the set covering problem over the given sets using the specified algorithm
+    """
+class SetCoveringProblem:
     
+    class Algorithm(Enum):
+        A_STAR = 1
+        GREEDY = 2
+        DEPTH_FIRST = 3
+        BREADTH_FIRST = 4
+        DIJKSTRA = 5
+
     class Mode(Enum):
         ACTION = 1
         DEBUG = 2
@@ -27,16 +40,16 @@ class SetCoveringProblem:
     def __init__(self,algorithm : Algorithm,MODE : Mode = Mode.DEBUG) -> None:
         self.mode = MODE
         match algorithm:
-            case Algorithm.A_STAR:
+            case self.Algorithm.A_STAR:
                 self.frontier = PriorityQueue()
                 self.cost_function = self.euristic
-            case Algorithm.GREEDY:
+            case self.Algorithm.GREEDY:
                 self.frontier = PriorityQueue()
                 self.cost_function = self.distance
-            case Algorithm.BREADTH_FIRST:
+            case self.Algorithm.BREADTH_FIRST:
                 self.frontier = SimpleQueue()
                 self.cost_function = lambda state : 0
-            case Algorithm.DIJKSTRA:
+            case self.Algorithm.DIJKSTRA:
                 self.frontier = PriorityQueue()
                 self.cost_function = lambda state : state.taken.__len__()
         
@@ -56,7 +69,7 @@ class SetCoveringProblem:
         optimistic_estimate = 0
         # Sort sets by number of elements not already covered
         untaken_sets = sorted((sum(np.logical_and(s, np.logical_not(already_covered))) for s in [self.sets[i] for i in state.untaken]), reverse=True)
-        
+
         # Add sets until all elements are covered
         for set in untaken_sets:
             missing_size = self.size - sum(already_covered)
@@ -104,26 +117,29 @@ class SetCoveringProblem:
 
 
 if __name__ == "__main__":
-    compare = Algorithm.GREEDY
+    compare = SetCoveringProblem.Algorithm.GREEDY
     MODE = SetCoveringProblem.Mode.ACTION
-    PROBABILITY = 0.25
     if PROBABILITY < 0 or PROBABILITY > 1:
         raise Exception("Probability must be between 0 and 1")
     
     for i in range(100):    
+
         SETS = tuple([np.array([random() < PROBABILITY for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
-        while (SetCoveringProblem(Algorithm.A_STAR).check_solvable(SETS) == False):
+        while (SetCoveringProblem(SetCoveringProblem.Algorithm.A_STAR).check_solvable(SETS) == False):
             SETS = tuple([np.array([random() < PROBABILITY for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
         print("iteration : ",i)
 
-        stateA = SetCoveringProblem(Algorithm.A_STAR,MODE=MODE).solve(SETS)
+        stateA = SetCoveringProblem(SetCoveringProblem.Algorithm.A_STAR,MODE=MODE).solve(SETS)
         match compare:
-            case Algorithm.GREEDY:
-                stateB = SetCoveringProblem(Algorithm.GREEDY,MODE=MODE).solve(SETS)
-            case Algorithm.DIJKSTRA:
-                stateB = SetCoveringProblem(Algorithm.DIJKSTRA,MODE=MODE).solve(SETS)
-            case Algorithm.BREADTH_FIRST:
-                stateB = SetCoveringProblem(Algorithm.BREADTH_FIRST,MODE=MODE).solve(SETS)
+            case SetCoveringProblem.Algorithm.GREEDY:
+                stateB = SetCoveringProblem(SetCoveringProblem.Algorithm.GREEDY,MODE=MODE).solve(SETS)
+
+            case SetCoveringProblem.Algorithm.DIJKSTRA:
+                stateB = SetCoveringProblem(SetCoveringProblem.Algorithm.DIJKSTRA,MODE=MODE).solve(SETS)
+
+            case SetCoveringProblem.Algorithm.BREADTH_FIRST:
+                stateB = SetCoveringProblem(SetCoveringProblem.Algorithm.BREADTH_FIRST,MODE=MODE).solve(SETS)
+
         if stateA.__len__() > stateB.__len__():
             print("ERROR")
             print(SETS)
