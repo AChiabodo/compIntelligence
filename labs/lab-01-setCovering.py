@@ -2,7 +2,7 @@ from collections import namedtuple
 from datetime import time
 from math import ceil
 import numpy as np
-from random import random
+from random import random , shuffle
 from queue import PriorityQueue, SimpleQueue , LifoQueue
 from functools import reduce
 from enum import Enum
@@ -14,7 +14,9 @@ PROBABILITY = 0.43
 
 class SetCoveringProblem:
     """
-    A class representing a set covering problem.
+    A class representing a set covering problem that can be solved by using the specified algorithm.
+
+    Includes also the definition of the problem's state, the goal check function and the possibility of check that a problem is solvable or not.
 
     Attributes:
     - algorithm (Algorithm): the algorithm to use for solving the problem
@@ -121,7 +123,8 @@ if __name__ == "__main__":
     MODE = SetCoveringProblem.Mode.ACTION
     if PROBABILITY < 0 or PROBABILITY > 1:
         raise Exception("Probability must be between 0 and 1")
-    
+
+### TESTING A* ALGORITHM OPTIMALITY ###
     for i in range(100):    
 
         SETS = tuple([np.array([random() < PROBABILITY for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
@@ -140,6 +143,24 @@ if __name__ == "__main__":
             case SetCoveringProblem.Algorithm.BREADTH_FIRST:
                 stateB = SetCoveringProblem(SetCoveringProblem.Algorithm.BREADTH_FIRST,MODE=MODE).solve(SETS)
 
+        if stateA.__len__() > stateB.__len__():
+            print("ERROR")
+            print(SETS)
+            print(stateA)
+            print(stateB)
+            break
+
+### A* ALGORITHM ORDER INDEPENDENCE TEST ###
+    SETS = tuple([np.array([random() < PROBABILITY for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
+    while (SetCoveringProblem(SetCoveringProblem.Algorithm.A_STAR).check_solvable(SETS) == False):
+        SETS = tuple([np.array([random() < PROBABILITY for _ in range(PROBLEM_SIZE)]) for _ in range(NUM_SETS)])
+    
+    stateA = SetCoveringProblem(SetCoveringProblem.Algorithm.A_STAR,MODE=MODE).solve(SETS)
+    for i in range(10):
+        print("iteration : ",i)
+        lista = list(SETS)
+        shuffle(lista)
+        stateB = SetCoveringProblem(SetCoveringProblem.Algorithm.A_STAR,MODE=MODE).solve(tuple(lista))
         if stateA.__len__() > stateB.__len__():
             print("ERROR")
             print(SETS)
