@@ -45,33 +45,13 @@ class SetCoveringProblem:
             reduce(np.logical_or,[self.sets[i] for i in state.taken], np.array([False for _ in range(self.size)]) ))
 
     def euristic(self,state):
-        return self.h3(state) 
-    
-    def h(self,state):
-        largest_set_size = max(sum(s) for s in self.sets)
-        missing_size = self.size - sum(self.covered(state))
-        optimistic_estimate = ceil(missing_size / largest_set_size)
-        return optimistic_estimate
-
-    def h2(self,state):
         already_covered = self.covered(state)
         if np.all(already_covered):
             return 0
-        largest_set_size = max(sum(np.logical_and(s, np.logical_not(already_covered))) for s in self.sets)
+        largest_remaining_set_size = max(sum(np.logical_and(s, np.logical_not(already_covered))) for s in self.sets if not np.all(np.logical_and(s, state.taken)))
         missing_size = self.size - sum(already_covered)
-        optimistic_estimate = ceil(missing_size / largest_set_size)
+        optimistic_estimate = ceil(missing_size / largest_remaining_set_size)
         return optimistic_estimate
-
-    def h3(self,state):
-        already_covered = self.covered(state)
-        if np.all(already_covered):
-            return 0
-        missing_size = self.size - sum(already_covered)
-        candidates = sorted((sum(np.logical_and(s, np.logical_not(already_covered))) for s in self.sets), reverse=True)
-        taken = 1
-        while sum(candidates[:taken]) < missing_size:
-            taken += 1
-        return taken
 
     def check_solvable(self,sets):
         self.sets = sets
@@ -82,7 +62,6 @@ class SetCoveringProblem:
         else:
             return True
         
-
     def solve(self,sets):
         self.sets = sets
         self.size = len(self.sets[0])
