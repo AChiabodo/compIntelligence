@@ -1,0 +1,25 @@
+**Author**: Alessandro Chiabodo
+ - Student ID: `s309234`
+ - Institutional Email: `s309234@studenti.polito.it`
+ - Repository : [AChiabodo/compIntelligence](https://github.com/AChiabodo/compIntelligence.git)
+ 
+Resources Used:
+ - [squillero/computational-intelligence](https://github.com/squillero/computational-intelligence) : Main source of material for the lab requirements and code
+ - Stuart Russel, Peter Norvig, *Artificial Intelligence: A Modern Approach* [4th edition] : Partial source for ES algorithms
+ - [Wikipedia](https://en.wikipedia.org/wiki/Nim) : Main source for the game rules
+
+
+# Lab2 - ES Algorithm for Nim
+Nim is a mathematical strategy game in which two players take turns removing (or "nimming") objects from different piles or stacks. In this version of the game (called 'misère') in each turn, a player can remove one or more objects from a single row, and the player who removes the last object loses.
+
+## Task 0: Definition of Classes and Utils functions
+In addition to the NimSum function already provided and used both for the expert agent and in the 'benchmarking' phase of the algorithm, several new classes and functions were defined and subsequently used in both assigned tasks.
+ - *Player class* : main interface for interoperability between different players classes, contains the definition of the main methods called "play", used to define the move of the player
+ - *Multiple Matches* : util function that calculate the outcomes of N different games where each time one player starts at random from among the two
+
+## Task 1: Find a rule-based Nim Player
+To develope an "expert" agent able to win almost all games we can exploit the property of the Nim Sum 
+
+## Task 2: Define an Evolution Strategy
+Evolution strategies and, more generally, evolutionary algorithms allow us to "train" an intelligent player. 
+To achieve that we need a way to define some "rules" that our new agent will try to learn and optimize, 
