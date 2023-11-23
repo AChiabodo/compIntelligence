@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 .virtual
 temp.*
+*.gz
+*.pdf
+.vscode
+temp/
