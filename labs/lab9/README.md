@@ -9,6 +9,9 @@ Resources Used:
  - Stuart Russel, Peter Norvig, *Artificial Intelligence: A Modern Approach* [4th edition] : Partial source for ES algorithms and theory
  - [ChatGPT](https://chat.openai.com) : Used to optimize methods and generate documentation
 
+#### Author's Note
+The code committed version of Sunday the 3rd was not working properly for a single variable not set properly (self.ration), so I've updated it on Monday the 4th.
+
 # Lab9 - Black-Box Optimization
 The main task is to write a local-search algorithm (eg. an EA) able to solve the *Problem* instances 1, 2, 5, and 10 on a 1000-loci genomes. We're not allowed to use any information about the problem, except for the fitness function.
 
