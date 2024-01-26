@@ -95,7 +95,8 @@ class ReinforcedPlayer(Player) :
         self._used_moves = 0
         self.wins = 0
         self.learning = True
-        self.power = 4
+        self.power = 5
+        self.games_played = 0
 
     def make_move(self, game : Game) -> tuple[tuple[int, int], Move]:
         #print(f"Already used moves : {self.used_moves}")
@@ -136,6 +137,7 @@ class ReinforcedPlayer(Player) :
                 self.Q[state][action] = max(0 , self.Q[state][action] + self.alpha * (2 * reward * self.Q[state][action]))
             reward = reward * self.gamma
         self.sequence = []
+        self.games_played += 1
 
     def find_good_moves(self, game : Game) -> tuple[tuple[int, int], Move]:
         best_moves = {}
@@ -176,3 +178,15 @@ class ReinforcedPlayer(Player) :
     @property
     def used_moves(self):
         return self._used_moves
+    
+    def save(self):
+        np.save("player.npy", self)
+    
+    def load(self):
+        temp = np.load("player.npy", allow_pickle=True).item()
+        self.Q = temp.Q
+        self.epsilon = temp.epsilon
+        self.alpha = temp.alpha
+        self.gamma = temp.gamma
+        self.power = temp.power
+        self.games_played = temp.games_played
