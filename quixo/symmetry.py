@@ -190,49 +190,77 @@ class SymmetryGenerator:
     
     def slide_rotate_90(self, slide: Move):
         # Rotate a slide by 90 degrees
-        if slide == Move.TOP: return Move.LEFT
-        elif slide == Move.BOTTOM: return Move.RIGHT
-        elif slide == Move.LEFT: return Move.BOTTOM
-        elif slide == Move.RIGHT: return Move.TOP
+        if slide == Move.TOP: 
+            return Move.LEFT
+        elif slide == Move.BOTTOM: 
+            return Move.RIGHT
+        elif slide == Move.LEFT: 
+            return Move.BOTTOM
+        elif slide == Move.RIGHT: 
+            return Move.TOP
 
     def slide_rotate_180(self, slide: Move):
         # Rotate a slide by 180 degrees
-        if slide == Move.TOP: return Move.BOTTOM
-        elif slide == Move.BOTTOM: return Move.TOP
-        elif slide == Move.LEFT: return Move.RIGHT
-        elif slide == Move.RIGHT: return Move.LEFT
+        if slide == Move.TOP: 
+            return Move.BOTTOM
+        elif slide == Move.BOTTOM: 
+            return Move.TOP
+        elif slide == Move.LEFT: 
+            return Move.RIGHT
+        elif slide == Move.RIGHT: 
+            return Move.LEFT
 
     def slide_rotate_270(self, slide: Move):
         # Rotate a slide by 270 degrees
-        if slide == Move.TOP: return Move.RIGHT
-        elif slide == Move.BOTTOM: return Move.LEFT
-        elif slide == Move.LEFT: return Move.TOP
-        elif slide == Move.RIGHT: return Move.BOTTOM
+        if slide == Move.TOP: 
+            return Move.RIGHT
+        elif slide == Move.BOTTOM: 
+            return Move.LEFT
+        elif slide == Move.LEFT: 
+            return Move.TOP
+        elif slide == Move.RIGHT: 
+            return Move.BOTTOM
 
     def slide_reflect_horizontal(self, slide: Move):
         # Reflect a slide horizontally
-        if slide == Move.TOP: return Move.TOP
-        elif slide == Move.BOTTOM: return Move.BOTTOM
-        elif slide == Move.LEFT: return Move.RIGHT
-        elif slide == Move.RIGHT: return Move.LEFT
+        if slide == Move.TOP: 
+            return Move.TOP
+        elif slide == Move.BOTTOM: 
+            return Move.BOTTOM
+        elif slide == Move.LEFT: 
+            return Move.RIGHT
+        elif slide == Move.RIGHT: 
+            return Move.LEFT
 
     def slide_reflect_vertical(self, slide: Move):
         # Reflect a slide vertically
-        if slide == Move.TOP: return Move.BOTTOM
-        elif slide == Move.BOTTOM: return Move.TOP
-        elif slide == Move.LEFT: return Move.LEFT
-        elif slide == Move.RIGHT: return Move.RIGHT
+        if slide == Move.TOP: 
+            return Move.BOTTOM
+        elif slide == Move.BOTTOM: 
+            return Move.TOP
+        elif slide == Move.LEFT: 
+            return Move.LEFT
+        elif slide == Move.RIGHT: 
+            return Move.RIGHT
 
     def slide_reflect_diagonal(self, slide: Move):
         # Reflect a slide along the diagonal
-        if slide == Move.TOP: return Move.LEFT
-        elif slide == Move.BOTTOM: return Move.RIGHT
-        elif slide == Move.LEFT: return Move.TOP
-        elif slide == Move.RIGHT: return Move.BOTTOM
+        if slide == Move.TOP: 
+            return Move.LEFT
+        elif slide == Move.BOTTOM: 
+            return Move.RIGHT
+        elif slide == Move.LEFT: 
+            return Move.TOP
+        elif slide == Move.RIGHT: 
+            return Move.BOTTOM
 
     def slide_reflect_antidiagonal(self, slide: Move):
         # Reflect a slide along the antidiagonal
-        if slide == Move.TOP: return Move.RIGHT
-        elif slide == Move.BOTTOM: return Move.LEFT
-        elif slide == Move.LEFT: return Move.BOTTOM
-        elif slide == Move.RIGHT: return Move.TOP
+        if slide == Move.TOP : 
+            return Move.RIGHT
+        elif slide == Move.BOTTOM : 
+            return Move.LEFT
+        elif slide == Move.LEFT : 
+            return Move.BOTTOM
+        elif slide == Move.RIGHT : 
+            return Move.TOP
