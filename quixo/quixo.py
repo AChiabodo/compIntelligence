@@ -7,7 +7,6 @@
 from game import Game, Move, Player
 from symmetry import SymmetryGenerator
 
-
 class Quixo(Game):
     def __init__(self) -> None:
         super().__init__()
