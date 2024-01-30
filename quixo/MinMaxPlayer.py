@@ -21,13 +21,13 @@ class MinmaxPlayer(Player):
         self.verbose = False
     def make_move(self, game: 'Game') -> tuple[tuple[int, int], Move]:
         """Returns the best action for the current player using minimax algorithm"""
-        #print("Thinking...")
+        
         # 1. Get the current player and save it as the maximizing player
         minimax_player_id = game.get_current_player()
         maximizing_player = True
 
         # 2. Call minimax recursively for the current player
-        _, best_action = self.minimax(game, self.depth, maximizing_player, minimax_player_id)
+        _, best_action = self.minimax(GameWrapper(game), self.depth, maximizing_player, minimax_player_id)
         
         return best_action
     
@@ -37,7 +37,7 @@ class MinmaxPlayer(Player):
         """
         if depth != 0 and self.verbose:
             print("minimax depth ", depth, " ", maximizing_player, " ", minimax_player_id)
-        game = GameWrapper(game)
+        #game = GameWrapper(game)
         alpha = alpha_value
         beta = beta_value
         # 0. TERMINAL CONDITIONS
