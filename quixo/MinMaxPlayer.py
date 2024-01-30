@@ -241,13 +241,15 @@ class MinmaxPlayer(Player):
         
         return best_action
     
-    def minimax(self, game: 'GameWrapper', depth: int, maximizing_player: bool, minimax_player_id: int) -> tuple[int, tuple[tuple[int, int], Move]]:
+    def minimax(self, game: 'GameWrapper', depth: int, maximizing_player: bool, minimax_player_id: int,alpha_value = float('-inf'), beta_value = float('inf')) -> tuple[int, tuple[tuple[int, int], Move]]:
         """
         Minimax recursive algorithm for Quixo
         """
         if depth != 0 and self.verbose:
             print("minimax depth ", depth, " ", maximizing_player, " ", minimax_player_id)
         game = GameWrapper(game)
+        alpha = alpha_value
+        beta = beta_value
         # 0. TERMINAL CONDITIONS
         # If we have reached the maximum depth or the game is over
         winner = game.check_winner()
@@ -274,13 +276,20 @@ class MinmaxPlayer(Player):
                 game_copy.make_move(from_pos, slide, minimax_player_id)
 
                 # 2.2.2. Call minimax recursively for the opponent
-                value, _ = self.minimax(game_copy, depth - 1, not maximizing_player, minimax_player_id)
+                value, _ = self.minimax(game_copy, depth - 1, not maximizing_player, minimax_player_id, alpha, beta)
 
                 # 2.2.3. If the value is better than the current best value
                 if value > best_value:
                     best_value = value
                     best_action = (from_pos, slide)
-            
+
+                # 2.2.4. Update alpha
+                alpha = max(alpha, best_value)
+
+                # 2.2.5. Check if we can prune
+                if beta <= alpha:
+                    break
+
             # 2.3. Return the best value and the best action
             return best_value, best_action
         
@@ -300,7 +309,7 @@ class MinmaxPlayer(Player):
                 game_copy.make_move(from_pos, slide, 1 - minimax_player_id)
 
                 # 3.2.2. Call minimax recursively for the opponent
-                value, _ = self.minimax(game_copy, depth - 1, not maximizing_player, minimax_player_id)
+                value, _ = self.minimax(game_copy, depth - 1, not maximizing_player, minimax_player_id, alpha, beta)
 
                 # 3.2.3. If the value is better than the current best value
                 if value < best_value:
