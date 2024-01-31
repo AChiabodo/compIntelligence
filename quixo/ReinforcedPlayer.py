@@ -38,7 +38,7 @@ class ReinforcedPlayer(Player) :
     def make_move(self, game : Game) -> tuple[tuple[int, int], Move]:
 
         self.state = game.get_board()
-                # 2. Check if the player is O
+        # 2. Check if the player is O
         player_is_O = game.get_current_player() == 1
 
         # 3. If the player is O, transform the board to take the pov of player X
@@ -50,7 +50,7 @@ class ReinforcedPlayer(Player) :
         #self.state = tuple(map(tuple, self.state))
         if self.state not in self.Q:
             self.Q[self.state] = {action : random.uniform(0,1) for action in GameWrapper(game).get_possible_actions()}
-            #self.Q[self.state] = self.find_best_moves(game)
+            
             self.action = max(self.Q[self.state], key= lambda k : self.Q[self.state][k])
         else:
             if random.uniform(0, 1) < self.epsilon:
@@ -64,37 +64,13 @@ class ReinforcedPlayer(Player) :
     
     def update(self, reward : int) -> None: # reward is 1 if the player won, -1 if the player lost, 0.1 if draw
         for state, action in reversed(self.sequence):
-            if self.sequence.__len__() == 3 and reward == 1:
-                self.Q[state][action] = min(1 , self.Q[state][action] + self.alpha * (2 *reward * self.Q[state][action]))
-            elif reward == 1:
-                self.Q[state][action] = min(1 , self.Q[state][action] + self.alpha * (reward * self.Q[state][action]))
+            if reward == 1:
+                self.Q[state][action] = min(1 , self.Q[state][action] + self.alpha * ( 4 * reward * self.Q[state][action]))
             else:
-                self.Q[state][action] = max(0 , self.Q[state][action] + self.alpha * (2 * reward * self.Q[state][action]))
+                self.Q[state][action] = max(0 , self.Q[state][action] + self.alpha * (reward * self.Q[state][action]))
             reward = reward * self.gamma
         self.sequence = []
         self.games_played += 1
-
-    def find_good_moves(self, game : Game) -> tuple[tuple[int, int], Move]:
-        best_moves = {}
-        already_tried = 0
-        while already_tried < self.power:
-            g = GameWrapper(game)
-            from_pos = (random.randint(0, 4), random.randint(0, 4))
-            move = random.choice([Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT])
-            if g.move(from_pos, move, g.current_player_idx):
-                already_tried += 1
-                tmp = self.simulate(g)
-                best_moves[(from_pos, move)] = tmp
-        return best_moves
-    
-    def find_best_moves(self, game : Game) -> tuple[tuple[int, int], Move]:
-        best_moves = {}
-        for from_pos,move in GameWrapper(game).get_possible_actions():
-            g = GameWrapper(game)
-            if g.move(from_pos, move, g.current_player_idx):
-                tmp = self.simulate(g)
-                best_moves[(from_pos, move)] = tmp
-        return best_moves
     
     def simulate(self, game: 'Game') -> int:
         size = 10
@@ -134,3 +110,46 @@ class ReinforcedPlayer(Player) :
         self.gamma = temp.gamma
         self.power = temp.power
         self.games_played = temp.games_played
+
+    def train_against(self, opponent : Player, games : int = 1000, verbose : bool = False, plot : bool = False) -> None:
+        wins = [0,0]
+        perc = []
+        init_epsilon = self.epsilon
+        init_alpha = self.alpha
+        self.learning = True
+        temp_wins = [0,0]
+        for i in range(games):
+            g = Game()
+            if i % 2 == 0:
+                winner = g.play(self, opponent)
+                wins[winner] += 1
+                if winner == 0:
+                    self.wins += 1
+                    self.update(reward=1)
+                else:
+                    self.update(reward=-1)
+            else:
+                winner = g.play(opponent, self)
+                wins[1-winner] += 1
+                if winner == 1:
+                    self.wins += 1
+                    self.update(1)
+                else:
+                    self.update(-1)
+            if (i + 1) % 100  == 0:
+                temp_wins[0] = wins[0] - temp_wins[0]
+                temp_wins[1] = wins[1] - temp_wins[1]
+                if verbose:
+                    print(f"{self.used_moves} already tried moves used with {self.Q.__len__()} states with epsilon {self.epsilon}")
+                    print("Wins : ", temp_wins[0] / (sum(temp_wins)) * 100 , "%")
+                if plot:
+                    perc.append((temp_wins[0] / (sum(temp_wins)) , self.alpha, self.epsilon ))
+                self.epsilon *= 0.98
+                self.alpha *= 0.97
+        if plot:
+            import matplotlib.pyplot as plt
+            plt.plot(perc)
+            plt.show()
+        self.learning = False
+        self.epsilon = init_epsilon
+        self.alpha = init_alpha

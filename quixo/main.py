@@ -32,14 +32,14 @@ if __name__ == '__main__':
         case PlayerEnum.MINMAX:
             player1 = MinmaxPlayer(depth=1)
         case PlayerEnum.REINFORCED:
-            player1 = ReinforcedPlayer()
+            player1 = ReinforcedPlayer(epsilon=0.6,alpha=0.4)
             path = os.path.join(os.getcwd(), "quixo" , "player_reinforced.npy")
             if os.path.exists(path):
                 player1.load(path=path)
             elif TRAINING_IF_REINFORCED:
                 player1.train_against(RandomPlayer(), 10000,verbose=True,plot=False)
         case PlayerEnum.REINFORCED_MINMAX:
-            player1 = ReinforcedMinMaxPlayer(depth=1, opening_depth=3, epsilon=0.8, alpha=0.2, gamma=0.7)
+            player1 = ReinforcedMinMaxPlayer(depth=1, opening_depth=3, epsilon=0.8, alpha=0.4, gamma=0.7)
             path = os.path.join(os.getcwd(), "quixo" , "player_reinforced_minmax.npy")
             if os.path.exists(path):
                 player1.load(path=path)
