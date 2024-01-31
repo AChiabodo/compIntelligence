@@ -49,8 +49,10 @@ class GameWrapper(Game):
                     x_count = 0
                     o_count = 0
                 # 2.2.4. Update the sequences
-                if x_count > 1: x_sequences[x_count-2] += 1
-                if o_count > 1: o_sequences[o_count-2] += 1
+                if x_count > 1: 
+                    x_sequences[x_count-2] += 1
+                if o_count > 1: 
+                    o_sequences[o_count-2] += 1
         
         # 3. Check the columns
         for col in range(5):
@@ -74,8 +76,10 @@ class GameWrapper(Game):
                     x_count = 0
                     o_count = 0
                 # 3.2.5. Update the sequences
-                if x_count > 1: x_sequences[x_count-2] += 1
-                if o_count > 1: o_sequences[o_count-2] += 1
+                if x_count > 1: 
+                    x_sequences[x_count-2] += 1
+                if o_count > 1: 
+                    o_sequences[o_count-2] += 1
 
         # 4. Check the principal diagonal
         # 4.1. Initialize the counters
@@ -98,8 +102,10 @@ class GameWrapper(Game):
                 x_count = 0
                 o_count = 0
             # 4.2.5. Update the sequences
-            if x_count > 1: x_sequences[x_count-2] += 1
-            if o_count > 1: o_sequences[o_count-2] += 1
+            if x_count > 1: 
+                x_sequences[x_count-2] += 1
+            if o_count > 1: 
+                o_sequences[o_count-2] += 1
 
         # 5. Check the secondary diagonal
         # 5.1. Initialize the counters
@@ -122,8 +128,10 @@ class GameWrapper(Game):
                 x_count = 0
                 o_count = 0
             # 5.2.5. Update the sequences
-            if x_count > 1: x_sequences[x_count-2] += 1
-            if o_count > 1: o_sequences[o_count-2] += 1
+            if x_count > 1: 
+                x_sequences[x_count-2] += 1
+            if o_count > 1: 
+                o_sequences[o_count-2] += 1
 
         # 6. Return the sequences
         return x_sequences, o_sequences
@@ -154,8 +162,10 @@ class GameWrapper(Game):
                 # 2.1.2. If the piece is neutral or belongs to the current player
                 if piece == -1 or piece == self.current_player_idx:
                     # 2.1.2.1. Add the option to move it from the opposite edge
-                    if row == 0: possible_actions.append(((i, row), Move.BOTTOM))
-                    else: possible_actions.append(((i, row), Move.TOP))
+                    if row == 0: 
+                        possible_actions.append(((i, row), Move.BOTTOM))
+                    else: 
+                        possible_actions.append(((i, row), Move.TOP))
                     # 2.1.2.2. If the piece is not in a corner, also add the option to move it from parallel edges
                     if i != 0 and i != 4:
                         possible_actions.append(((i, row), Move.LEFT))
@@ -168,8 +178,10 @@ class GameWrapper(Game):
                 # 2.2.2. If the piece is neutral or belongs to the current player
                 if piece == -1 or piece == self.current_player_idx:
                     # 2.2.2.1. Add the option to move it from the opposite edge
-                    if col == 0: possible_actions.append(((col, i), Move.RIGHT))
-                    else: possible_actions.append(((col, i), Move.LEFT))
+                    if col == 0: 
+                        possible_actions.append(((col, i), Move.RIGHT))
+                    else: 
+                        possible_actions.append(((col, i), Move.LEFT))
                     # 2.2.2.2. If the piece is not in a corner, also add the option to move it from parallel edges
                     if i != 0 and i != 4:
                         possible_actions.append(((col, i), Move.TOP))
@@ -195,6 +207,11 @@ class GameWrapper(Game):
             self._board[:(axis_0 + 1), axis_1] = np.roll(self._board[:(axis_0 + 1), axis_1], 1)
         return True
     
+    def already_made_moves(self) -> int:
+        mask = self._board != -1
+        count = np.count_nonzero(mask)
+        return count
+
     @staticmethod
     def __acceptable_slides(from_position: tuple[int, int]):
         """When taking a piece from {from_position} returns the possible moves (slides)"""
