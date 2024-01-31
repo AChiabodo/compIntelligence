@@ -1,8 +1,9 @@
-from math import e
-from game import Game, Move, Player
 from copy import deepcopy
+import os
 import numpy as np
 import random
+
+from game import Game, Move, Player
 from GameWrapper import GameWrapper
 
 def encode_board(board : np.ndarray) -> tuple[int,int]:
@@ -21,7 +22,7 @@ def decode_board(board : tuple[int,int]) -> np.ndarray:
     return board_1 + board_2
 
 class ReinforcedMinMaxPlayer(Player) :
-    def __init__(self, k : int = 0.1, epsilon : float = 0.1, alpha : float = 0.1, gamma : float = 0.9):
+    def __init__(self, k : int = 0.1, epsilon : float = 0.1, alpha : float = 0.1, gamma : float = 0.9, depth : int = 1, opening_depth : int = 3):
         super().__init__()
         self.epsilon = epsilon # exploration rate
         self.alpha = alpha # learning rate
@@ -35,83 +36,84 @@ class ReinforcedMinMaxPlayer(Player) :
         self.learning = True
         self.power = 5
         self.games_played = 0
+        self.depth = depth
+        self.verbose = False
+        self.opening_depth = opening_depth
+        self.training = False
 
     def make_move(self, game : Game) -> tuple[tuple[int, int], Move]:
+        # 1.1 Get the actual board
         self.state = game.get_board()
-                # 2. Check if the player is O
+        # 1.2 Check if the player is O
         player_is_O = game.get_current_player() == 1
-        already_made_moves = 2 # number of moves already made by the player, obtained by counting the number of non-neutral pieces on the board
-        if self.learning and already_made_moves < 2: 
-            # 3. If the player is O, transform the board to take the pov of player X
-            if player_is_O:
-                for i in range(5):
-                    for j in range(5):
-                        self.state[i][j] = (1 - self.state[i][j]) if self.state[i][j] in [0, 1] else self.state[i][j]
-            self.state = encode_board(self.state)
+        # 2. Count the number of moves already made in the game
+        already_made_moves = np.count_nonzero(self.state != -1) # number of moves already made by the player, obtained by counting the number of non-neutral pieces on the board
+        
 
-            if self.state not in self.Q:
-                self.Q[self.state] = {action : random.uniform(0,1) for action in GameWrapper(game).get_possible_actions()}
-
-                self.action = max(self.Q[self.state], key= lambda k : self.Q[self.state][k])
+        if self.training:
+            # 2.1 If we're still in the opening, use the opening book
+            if already_made_moves < self.opening_depth: 
+                # 3. If the player is O, transform the board to take the pov of player X
+                if player_is_O:
+                    for i in range(5):
+                        for j in range(5):
+                            self.state[i][j] = (1 - self.state[i][j]) if self.state[i][j] in [0, 1] else self.state[i][j]
+                self.state = encode_board(self.state)
+                # 3.1 If the state is not in the Q table, add it
+                if self.state not in self.Q:
+                    self.Q[self.state] = {action : random.uniform(0,1) for action in GameWrapper(game).get_possible_actions()}
+                    self.action = max(self.Q[self.state], key= lambda k : self.Q[self.state][k])
+                # 3.2 If the state is in the Q table, use the Q table
+                else:
+                    if random.uniform(0, 1) < self.epsilon:
+                        self.action = random.choice(list(self.Q[self.state].keys()))
+                    else:
+                        self.action = max(self.Q[self.state], key= lambda k : self.Q[self.state][k])
+                        self._used_moves += 1
+                # 3.3 We're learning, add the state and action to the sequence
+                self.sequence.append((self.state, self.action))
+            # To better explore the opening, we use a random approach rather than minmax
             else:
-                if random.uniform(0, 1) < self.epsilon:
-                    self.action = random.choice(list(self.Q[self.state].keys()))
+                    self.action = {action : random.uniform(0,1) for action in GameWrapper(game).get_possible_actions()}
+                    self.action = max(self.action, key= lambda k : self.action[k])
+
+        else:
+            # 2.1 If we're still in the opening, use the opening book
+            if already_made_moves < self.opening_depth: 
+                # 3. If the player is O, transform the board to take the pov of player X
+                if player_is_O:
+                    for i in range(5):
+                        for j in range(5):
+                            self.state[i][j] = (1 - self.state[i][j]) if self.state[i][j] in [0, 1] else self.state[i][j]
+                self.state = encode_board(self.state)
+                # 3.1 If the state is not in the Q table, take a random action
+                if self.state not in self.Q:
+                    self.action = {action : random.uniform(0,1) for action in GameWrapper(game).get_possible_actions()}
+                    self.action = max(self.action, key= lambda k : self.action[k])
+                # 3.2 If the state is in the Q table, use the Q table
                 else:
                     self.action = max(self.Q[self.state], key= lambda k : self.Q[self.state][k])
                     self._used_moves += 1
-            self.sequence.append((self.state, self.action))
-        else:
-            minimax_player_id = game.get_current_player()
-            maximizing_player = True
+            # 4. If we're not in the opening, use minimax
+            else:
+                minimax_player_id = game.get_current_player()
+                maximizing_player = True
 
-            # 2. Call minimax recursively for the current player
-            _, best_action = self.minimax(game, self.depth, maximizing_player, minimax_player_id)
+                # 2. Call minimax recursively for the current player
+                _, best_action = self.minimax(game, self.depth, maximizing_player, minimax_player_id)
+                self.action = best_action
 
         return self.action
     
     def update(self, reward : int) -> None: # reward is 1 if the player won, -1 if the player lost, 0.1 if draw
         for state, action in reversed(self.sequence):
-            if self.sequence.__len__() == 3 and reward == 1:
-                self.Q[state][action] = min(1 , self.Q[state][action] + self.alpha * (2 *reward * self.Q[state][action]))
-            elif reward == 1:
-                self.Q[state][action] = min(1 , self.Q[state][action] + self.alpha * (reward * self.Q[state][action]))
+            if reward == 1:
+                self.Q[state][action] = min(1 , self.Q[state][action] + self.alpha * (1 * reward * self.Q[state][action]))
             else:
-                self.Q[state][action] = max(0 , self.Q[state][action] + self.alpha * (2 * reward * self.Q[state][action]))
+                self.Q[state][action] = max(0 , self.Q[state][action] + self.alpha * (1 * reward * self.Q[state][action]))
             reward = reward * self.gamma
         self.sequence = []
         self.games_played += 1
-
-    def find_good_moves(self, game : Game) -> tuple[tuple[int, int], Move]:
-        best_moves = {}
-        already_tried = 0
-        while already_tried < self.power:
-            g = GameWrapper(game)
-            from_pos = (random.randint(0, 4), random.randint(0, 4))
-            move = random.choice([Move.TOP, Move.BOTTOM, Move.LEFT, Move.RIGHT])
-            if g.move(from_pos, move, g.current_player_idx):
-                already_tried += 1
-                tmp = self.simulate(g)
-                best_moves[(from_pos, move)] = tmp
-        return best_moves
-    
-    def find_best_moves(self, game : Game) -> tuple[tuple[int, int], Move]:
-        best_moves = {}
-        for from_pos,move in GameWrapper(game).get_possible_actions():
-            g = GameWrapper(game)
-            if g.move(from_pos, move, g.current_player_idx):
-                tmp = self.simulate(g)
-                best_moves[(from_pos, move)] = tmp
-        return best_moves
-    
-    def simulate(self, game: 'Game') -> int:
-        size = 10
-        winner = 0
-        for _ in range(size):
-            g = deepcopy(game)
-            player1 = self.RandomPlayer()
-            player2 = self.RandomPlayer()
-            winner += (g.play(player1, player2) == 0)
-        return winner / size
 
     class RandomPlayer(Player):
         def __init__(self) -> None:
@@ -130,17 +132,21 @@ class ReinforcedMinMaxPlayer(Player) :
     def used_moves(self):
         return self._used_moves
     
-    def save(self):
-        np.save("player.npy", self)
+    def save(self,path : str):
+        path = os.path.join(path, "player_reinforced_minmax.npy")
+        np.save(path, self)
+        return path
     
-    def load(self):
-        temp = np.load("player.npy", allow_pickle=True).item()
+    def load(self,path : str):
+        temp = np.load(path, allow_pickle=True).item()
         self.Q = temp.Q
         self.epsilon = temp.epsilon
         self.alpha = temp.alpha
         self.gamma = temp.gamma
         self.power = temp.power
         self.games_played = temp.games_played
+        self._used_moves = temp._used_moves
+        self.opening_depth = temp.opening_depth
 
     def minimax(self, game: 'GameWrapper', depth: int, maximizing_player: bool, minimax_player_id: int,alpha_value = float('-inf'), beta_value = float('inf')) -> tuple[int, tuple[tuple[int, int], Move]]:
         """
@@ -250,3 +256,49 @@ class ReinforcedMinMaxPlayer(Player) :
         player_score = player_sequences[0] + player_sequences[1] * 3 + player_sequences[2] * 5
         opponent_score = opponent_sequences[0] + opponent_sequences[1] * 3 + opponent_sequences[2] * 5
         return player_score - opponent_score
+
+    def train_against(self, opponent : Player, games : int = 1000, verbose : bool = False, plot : bool = False) -> None:
+        self.training = True
+        init_alpha = self.alpha
+        init_epsilon = self.epsilon
+        wins = [0,0]
+        perc = []
+        for i in range(games):
+            g = Game()
+            if i % 2 == 0:
+                winner = g.play(self, opponent)
+                wins[winner] += 1
+                if winner == 0:
+                    self.wins += 1
+                    self.update(1)
+                else:
+                    self.update(-1)
+            else:
+                winner = g.play(opponent, self)
+                wins[1-winner] += 1
+                if winner == 1:
+                    self.wins += 1
+                    self.update(1)
+                else:
+                    self.update(-1)
+            if (i + 1) % 50  == 0:
+                if verbose:
+                    print(f"{self.used_moves} already tried moves used with {self.Q.__len__()} states with epsilon {self.epsilon}")
+                    print("Wins : ", wins[0] / (sum(wins)) * 100 , "%")
+                if plot:
+                    perc.append((wins[0] / (sum(wins)) , self.alpha, self.epsilon ))
+                
+                self.epsilon = init_epsilon*(1 - i/games)**0.9
+                self.alpha = init_alpha*(1 - i/games)**0.9
+                
+            elif (i + 1) % 100  == 0 and plot:
+                perc.append((wins[0] / (sum(wins)) , self.alpha, self.epsilon ))
+
+        if plot:
+            import matplotlib.pyplot as plt
+            plt.plot(perc)
+            plt.show()
+        if verbose:
+            print(f"{self.used_moves} already tried moves used with {self.Q.__len__()} states with epsilon {self.epsilon}")
+            print("Wins : ", wins[0] / (sum(wins)) * 100 , "%")
+        self.training = False
